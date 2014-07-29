@@ -1,0 +1,3 @@
+[submodule "jcsg"]
+	path = jcsg
+	url = https://github.com/miho/JCSG.git
