@@ -1,4 +1,5 @@
 import json
+import os
 
 #Transform
 def union( *args ):
@@ -18,20 +19,23 @@ def intersection( *args ):
 
 def translate( x, y, z ):
 	def func( *args ):
-		return ["translate", float(x), float(y), float(z), union( args )]
+		return ["translate", float(x), float(y), float(z), union( *args )]
 	return func
 
 #Primitives
 def box( x, y, z ):
 	return ["box", float(x), float(y), float(z)]
 
+def stl( filepath, abspath=True ):
+	return ["stl", os.path.abspath( filepath ) if abspath else filepath]
+	
 #Modifiers
 def color( r, g, b ):
 	def func( *args ):
-		return ["color", float(x), float(y), float(z), union( args )]
+		return ["color", float(r), float(g), float(b), union( *args )]
 	return func
 
 #Helpers	
 def write_out( filename, object ):
 	with open( filename, "w" ) as f:
-		f.write( json.dumps( object ) )
+		f.write( json.dumps( object, indent=3 ) )

@@ -3,6 +3,8 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="jcsg/build/classes/main" sourcepath="jcsg/src/main"/>
 	<classpathentry kind="lib" path="lib/json-simple-1.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/jogl/jar/gluegen-rt.jar"/>
+	<classpathentry kind="lib" path="lib/jogl/jar/jogl-all.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="jcsg/build/tmp/expandedArchives/slf4j-api-1.6.1.jar_2tslaqs2lpm1dm774mbci7b2v0"/>
 	<classpathentry kind="lib" path="jcsg/build/tmp/expandedArchives/slf4j-simple-1.6.1.jar_3b9ug1vcpbj6jnu78sr23m559s"/>

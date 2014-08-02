@@ -1,6 +1,7 @@
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.vecmath.Matrix3f;
 import javax.vecmath.Point3f;
@@ -10,6 +11,7 @@ import com.phyloa.dlib.math.Geom;
 import com.phyloa.dlib.math.Intersection;
 import com.phyloa.dlib.math.Rayf;
 import com.phyloa.dlib.math.Trianglef;
+import com.phyloa.dlib.renderer.RayTraceImageRenderer.Light;
 import com.phyloa.dlib.util.DGraphics;
 
 import eu.mihosoft.vrl.v3d.CSG;
@@ -28,6 +30,7 @@ public class RayTracer
 	CSG c;
 	ArrayList<Geom> geom = new ArrayList<Geom>();
 	
+	ArrayList<Point3f> lights = new ArrayList<Point3f>();
 	Point3f cameraLoc = new Point3f( 0, 0, 0 );
 	Vector3f cameraLook = new Vector3f();
 	Vector3f cameraUp = new Vector3f();
@@ -59,6 +62,7 @@ public class RayTracer
 		cameraLook.x = lx;
 		cameraLook.y = ly;
 		cameraLook.z = lz;
+		cameraLook.sub( cameraLoc );
 		cameraUp.x = ux;
 		cameraUp.y = uy;
 		cameraUp.z = uz;
@@ -83,36 +87,28 @@ public class RayTracer
 	
 	public void setup()
 	{
-		List<Polygon> polys = c.getPolygons();
-		for( Polygon p : polys )
-		{
-			for( int i = 0; i < p.vertices.size() - 2; i++ ) 
-			{
-				Vertex p0 = p.vertices.get( i );
-				Vertex p1 = p.vertices.get( i+1 );
-				Vertex p2 = p.vertices.get( i+2 );
-				Trianglef t = new Trianglef( 
-						new Point3f( (float)p0.pos.x, (float)p0.pos.y, (float)p0.pos.z ),
-						new Point3f( (float)p1.pos.x, (float)p1.pos.y, (float)p1.pos.z ),
-						new Point3f( (float)p2.pos.x, (float)p2.pos.y, (float)p2.pos.z )
-				);
-				t.color = DGraphics.rgb( 255, 0, 0 );
-				geom.add( t );
-			}
-		}
+		geom.addAll( CSGParser.parse( c ) );
 	}
 	
+	long lastUpdate;
 	public void render()
 	{
+		lastUpdate = System.currentTimeMillis();
+		System.out.println( "RENDER START" );
 		for( int y = 0; y < height; y++ ) 
 		{
+			if( System.currentTimeMillis() - lastUpdate > 1000 ) 
+			{ 
+				lastUpdate = System.currentTimeMillis();
+				System.out.println( "RENDER LINE: " + y ); 
+			}
 			for( int x = 0; x < width; x++ ) 
 			{
 				Rayf ray = new Rayf( cameraLoc, getLookVector( x, y ) );
 				values[x][y] = trace( ray );
 			}
 		}
-		
+		System.out.println( "RENDER: Filling Image Buffer" );
 		for( int y = 0; y < height; y++ ) 
 		{
 			for( int x = 0; x < width; x++ ) 
@@ -122,21 +118,54 @@ public class RayTracer
 			}
 		}
 		im.flush();
+		System.out.println( "RENDER FINISH" );
 	}
 	
 	public Point3f trace( Rayf ray )
 	{
-		for( int i = 0; i < geom.size(); i++ )
+		Intersection intersect = getIntersection( ray );
+		if( intersect != null )
 		{
-			Geom g = geom.get( i );
-			Intersection intersect = g.intersects( ray );
-			if( intersect != null )
+			int c = intersect.getGeom().getColor( 0, 0 );
+			for( Point3f light : lights )
 			{
-				int c = g.getColor( 0, 0 );
-				return new Point3f( DGraphics.getRed( c ), DGraphics.getGreen( c ), DGraphics.getBlue( c ) );
+				Vector3f lv = new Vector3f( light );
+				lv.sub( intersect.getLoc() );
+				Rayf lr = new Rayf( intersect.getLoc(), lv );
+				Intersection li = getIntersection( lr );
+				if( li == null )
+				{
+					c = DGraphics.brighten( c );
+				}
+				else
+				{
+					c = DGraphics.darken( c );
+				}
 			}
+			return new Point3f( DGraphics.getRed( c ), DGraphics.getGreen( c ), DGraphics.getBlue( c ) );
 		}
 		return new Point3f( 0, 0, 0 );
+	}
+	
+	public Intersection getIntersection( Rayf ray )
+	{
+		Intersection point = null;
+		
+		for( int j = 0; j < geom.size(); j++ )
+		{
+			Intersection temp = geom.get( j ).intersects( ray );
+			if( point != null && temp != null )
+			{
+				if( temp.getDist() < point.getDist() )
+					point = temp;
+			}
+			else if( point == null )
+			{
+				point = temp;
+			}
+		}
+		
+		return point;
 	}
 	
 	public Vector3f getLookVector( int x, int y )
@@ -146,5 +175,10 @@ public class RayTracer
 		Vector3f vec = new Vector3f( (breadth * xNorm) - (breadth/2), 1, (lift * yNorm) - (lift/2) );
 		camera.transform( vec );
 		return vec;
+	}
+
+	public void light( float x, float y, float z )
+	{
+		lights.add( new Point3f( x, y, z ) );
 	}
 }
