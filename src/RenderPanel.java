@@ -57,15 +57,11 @@ public class RenderPanel implements GLEventListener
     public void display( GLAutoDrawable glautodrawable )
     {
     	GL2 gl2 = glautodrawable.getGL().getGL2();
-    	int width = glautodrawable.getWidth();
-    	int height = glautodrawable.getHeight();
-    	
     	gl2.glClear( GL.GL_COLOR_BUFFER_BIT );
 
-        // draw a triangle filling the window
-        //gl2.glLoadIdentity();
         if( geom != null )
         {
+        	gl2.glColor3f( 1, 1, 1 );
 	    	gl2.glBegin( GL.GL_TRIANGLES );
 	        for( Trianglef t : geom ) {
 	        	gl2.glVertex3f( t.p1.x, t.p1.y, t.p1.z );
@@ -88,5 +84,6 @@ public class RenderPanel implements GLEventListener
 	public void renderCSG( CSG g )
 	{
 		geom = CSGParser.parse( g );
+		gljpanel.display();
 	}
 }
