@@ -2,6 +2,7 @@
 *.class
 .settings/
 .project
+*.properties
 
 # Windows image file caches
 Thumbs.db

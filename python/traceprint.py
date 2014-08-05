@@ -26,8 +26,17 @@ def translate( x, y, z ):
 def box( x, y, z ):
 	return ["box", float(x), float(y), float(z)]
 
+def sphere( r, slices=16, stacks=8 ):
+	return ["sphere", float(r), int(slices), int(stacks)]
+
+def cylinder( r, height, slices=8 ):
+	return ["cylinder", float(r), float(height), int(slices)]
+	
 def stl( filepath, abspath=True ):
 	return ["stl", os.path.abspath( filepath ) if abspath else filepath]
+
+def polyhedron( points, faces ):
+	return ["polyhedron", points, faces]
 	
 #Modifiers
 def color( r, g, b ):
@@ -39,3 +48,6 @@ def color( r, g, b ):
 def write_out( filename, object ):
 	with open( filename, "w" ) as f:
 		f.write( json.dumps( object, indent=3 ) )
+
+def from_solid( obj ):
+	
