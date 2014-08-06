@@ -20,6 +20,11 @@ import eu.mihosoft.vrl.v3d.Vector3d;
 
 public class TreeCompiler
 {
+	static 
+	{
+		CSG.setDefaultOptType( CSG.OptType.POLYGON_BOUND );
+	}
+	
 	public static CSG parse( String s ) throws IOException
 	{
 		return parse( (JSONArray)JSONValue.parse( s ) );
@@ -39,7 +44,16 @@ public class TreeCompiler
 			return c;
 		}
 		case "difference": {
-			return parse( (JSONArray)a.get( 1 ) ).difference( parse( (JSONArray)a.get( 2 ) ) );
+			CSG c1 = parse( (JSONArray)a.get( 1 ) );
+			CSG c2 = parse( (JSONArray)a.get( 2 ) );
+			CSG ret = null;
+			try {
+				ret = c1.difference( c2 );
+			} catch( Exception ex )
+			{
+				ret = c1;
+			}
+			return ret;
 		}
 		case "intersection": {
 			CSG c = parse( (JSONArray)a.get( 1 ) );
@@ -58,7 +72,7 @@ public class TreeCompiler
 			return new Cube( (double)a.get( 1 ), (double)a.get( 2 ), (double)a.get( 3 ) ).toCSG();
 		}
 		case "sphere": {
-			return new Sphere( (double)a.get( 1 ), (int)a.get( 2 ), (int)a.get( 3 ) ).toCSG();
+			return new Sphere( (double)a.get( 1 ), (int)(long)a.get( 2 ), (int)(long)a.get( 3 ) ).toCSG();
 		}
 		case "cylinder": {
 			return new Cylinder( (double)a.get( 1 ), (double)a.get( 2 ), (int)a.get( 3 ) ).toCSG();
