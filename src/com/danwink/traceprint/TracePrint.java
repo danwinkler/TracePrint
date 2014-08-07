@@ -32,10 +32,14 @@ public class TracePrint implements FileWatcherListener
 	public RenderPanel rp;
 	public CodePanel cp;
 	
+	public StatusBar sb;
+	
 	public DProperties prefs;
 	
 	CSG g;
 	FileWatcher fw;
+	
+	TreeCompiler tc = new TreeCompiler();
 	
 	public TracePrint()
 	{
@@ -62,6 +66,9 @@ public class TracePrint implements FileWatcherListener
 		
 		splitPane = new JSplitPane( JSplitPane.HORIZONTAL_SPLIT, cp, rp.gljpanel );
 		container.getContentPane().add( splitPane, BorderLayout.CENTER );
+		
+		sb = new StatusBar();
+		container.getContentPane().add( sb, BorderLayout.SOUTH );
 		
 		container.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
 		container.setSize( 640, 480 );
@@ -138,16 +145,12 @@ public class TracePrint implements FileWatcherListener
 	{
 		try
 		{
+			sb.fileName.setText( f.getAbsolutePath() );
 			String text = DFile.loadText( f );
-			g = TreeCompiler.parse( text );
+			tc.runParseThread( text, c -> { g = c; rp.renderCSG( g ); } );
 			cp.updateCode( text );
-			rp.renderCSG( g );
 		}
 		catch( FileNotFoundException e )
-		{
-			e.printStackTrace();
-		}
-		catch( IOException e )
 		{
 			e.printStackTrace();
 		}
