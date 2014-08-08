@@ -27,6 +27,16 @@ public class TreeCompiler
 	    void finished( CSG g );
 	}
 	
+	public int getProgress()
+	{
+		return onNode;
+	}
+	
+	public int getMax()
+	{
+		return numNodes;
+	}
+	
 	public void runParseThread( String s, ParseCallback cb )
 	{
 		numNodes = 0;

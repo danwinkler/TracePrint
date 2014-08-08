@@ -148,6 +148,7 @@ public class TracePrint implements FileWatcherListener
 			sb.fileName.setText( f.getAbsolutePath() );
 			String text = DFile.loadText( f );
 			tc.runParseThread( text, c -> { g = c; rp.renderCSG( g ); } );
+			sb.startProgressThread( () -> tc.getProgress(), () -> tc.getMax() );
 			cp.updateCode( text );
 		}
 		catch( FileNotFoundException e )
