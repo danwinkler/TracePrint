@@ -1,15 +1,16 @@
 package com.danwink.traceprint;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-
-import javafx.scene.paint.Color;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 import eu.mihosoft.vrl.v3d.CSG;
-import eu.mihosoft.vrl.v3d.Cube;
 import eu.mihosoft.vrl.v3d.Transform;
 import eu.mihosoft.vrl.v3d.Vector3d;
 
@@ -46,9 +47,34 @@ public class TreeCompiler
 			{
 				try
 				{
-					Node n = createTree( s );
-					CSG g = n.toCSG();
-					cb.finished( g );
+					ArrayList<ModuleContainer> modules = getModules( s );
+					boolean complete = false;
+					while( !complete )
+					{
+						complete = true;
+						for( int i = 0; i < modules.size(); i++ )
+						{
+							ModuleContainer m = modules.get( i );
+							if( m.csg == null )
+							{
+								if( m.satisfied( modules ) )
+								{
+									m.buildCSG( modules );
+								}
+								else
+								{
+									complete = false;
+								}
+							}
+						}
+					}
+					for( ModuleContainer mc : modules )
+					{
+						if( mc.name.equals( "main" ) )
+						{
+							cb.finished( mc.csg );
+						}
+					}
 				}
 				catch( IOException e )
 				{
@@ -59,67 +85,88 @@ public class TreeCompiler
 		t.start();
 	}
 	
-	public Node createTree( String s )
+	public ArrayList<ModuleContainer> getModules( String s )
 	{
-		return createTree( (JSONArray)JSONValue.parse( s ) );
+		return getModules( (JSONObject)JSONValue.parse( s ) );
 	}
 	
-	public Node createTree( JSONArray a )
+	@SuppressWarnings( "unchecked" )
+	public ArrayList<ModuleContainer> getModules( JSONObject o )
+	{
+		ArrayList<ModuleContainer> modules = new ArrayList<ModuleContainer>();
+		JSONObject geometry = (JSONObject)o.get( "geometry" );
+		geometry.forEach( (k, v) -> {
+			ModuleContainer m = new ModuleContainer();
+			m.name = (String)k;
+			m.node = parseGeometryJSON( (JSONObject)v );
+			m.depends = m.node.getDependencies();
+			modules.add( m );
+		});
+		return modules;
+	}
+	
+	public Node parseGeometryJSON( String s )
+	{
+		return parseGeometryJSON( (JSONObject)JSONValue.parse( s ) );
+	}
+	
+	@SuppressWarnings( "unchecked" )
+	public Node parseGeometryJSON( JSONObject a )
 	{
 		numNodes++;
-		String type = (String)a.get( 0 );
+		String type = (String)a.get( "type" );
 		switch( type ) {
 		//Transforms
 		case "union": {
 			Union u = new Union();
-			for( int i = 1; i < a.size(); i++ )
-			{
-				u.children.add( createTree( (JSONArray)a.get( i ) ) );
-			}
+			JSONArray children = (JSONArray)a.get( "children" );
+			children.forEach( c -> { 
+				u.children.add( parseGeometryJSON( (JSONObject)c ) );
+			});
 			return u;
 		}
 		case "difference": {
-			Node c1 = createTree( (JSONArray)a.get( 1 ) );
-			Node c2 = createTree( (JSONArray)a.get( 2 ) );
+			Node c1 = parseGeometryJSON( (JSONObject)a.get( "a" ) );
+			Node c2 = parseGeometryJSON( (JSONObject)a.get( "b" ) );
 			return new Difference( c1, c2 );
 		}
 		case "intersection": {
 			Intersection in = new Intersection();
-			for( int i = 1; i < a.size(); i++ )
-			{
-				in.children.add( createTree( (JSONArray)a.get( i ) ) );
-			}
+			JSONArray children = (JSONArray)a.get( "children" );
+			children.forEach( c -> { 
+				in.children.add( parseGeometryJSON( (JSONObject)c ) );
+			});
 			return in;
 		}
 		case "translate": {
-			Translate t = new Translate( (double)a.get( 1 ), (double)a.get( 2 ), (double)a.get( 3 ) );
-			t.children.add( createTree( (JSONArray)a.get( 4 ) ) );
+			Translate t = new Translate( (double)a.get( "x" ), (double)a.get( "y" ), (double)a.get( "z" ) );
+			t.children.add( parseGeometryJSON( (JSONObject)a.get( "children" ) ) );
 			return t;
 		}
 		//Primitives
 		case "box": {
-			return new Box( (double)a.get( 1 ), (double)a.get( 2 ), (double)a.get( 3 ) );
+			return new Box( (double)a.get( "x" ), (double)a.get( "y" ), (double)a.get( "z" ) );
 		}
 		case "sphere": {
-			return new Sphere( (double)a.get( 1 ), (int)(long)a.get( 2 ), (int)(long)a.get( 3 ) );
+			return new Sphere( (double)a.get( "r" ), (int)(long)a.get( "slices" ), (int)(long)a.get( "stacks" ) );
 		}
 		case "cylinder": {
-			return new Cylinder( (double)a.get( 1 ), (double)a.get( 2 ), (int)a.get( 3 ) );
+			return new Cylinder( (double)a.get( "r" ), (double)a.get( "height" ), (int)a.get( "slices" ) );
 		}
 		case "stl": {
-			return new STL( (String)a.get( 1 ) );
+			return new STL( (String)a.get( "path" ) );
 		}
 		case "polyhedron": {
 			List<Vector3d> points = new ArrayList<Vector3d>();
 			List<List<Integer>> faces = new ArrayList<List<Integer>>();
-			JSONArray parr = (JSONArray)a.get( 1 );
+			JSONArray parr = (JSONArray)a.get( "points" );
 			for( int i = 0; i < parr.size(); i++ )
 			{
 				JSONArray parr2 = (JSONArray)parr.get( i );
 				points.add( new Vector3d( (double)parr2.get( 0 ), (double)parr2.get( 1 ), (double)parr2.get( 2 ) ) );
 			}
 			
-			JSONArray farr = (JSONArray)a.get( 2 );
+			JSONArray farr = (JSONArray)a.get( "faces" );
 			for( int i = 0; i < farr.size(); i++ )
 			{
 				JSONArray farr2 = (JSONArray)farr.get( i );
@@ -134,35 +181,79 @@ public class TreeCompiler
 		}
 		//Modifiers
 		case "color": {
-			Color color = new Color( (double)a.get( 1 ), (double)a.get( 2 ), (double)a.get( 3 ) );
-			color.children.add( createTree( (JSONArray)a.get( 4 ) ) );
+			Color color = new Color( (double)a.get( "r" ), (double)a.get( "g" ), (double)a.get( "b" ) );
+			color.children.add( parseGeometryJSON( (JSONObject)a.get( "children" ) ) );
 			return color;
 		}
 		}
 		return null;
 	}
 	
+	public class ModuleContainer
+	{
+		String name;
+		Node node;
+		CSG csg;
+		ArrayList<String> depends;
+		
+		public boolean satisfied( ArrayList<ModuleContainer> n )
+		{
+			for( int i = 0; i < depends.size(); i++ )
+			{
+				String depend = depends.get( i );
+				for( int j = 0; j < n.size(); j++ )
+				{
+					ModuleContainer mc = n.get( j );
+					if( depend.equals( mc.name ) && mc.csg == null )
+					{
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+		
+		public void buildCSG( ArrayList<ModuleContainer> modules ) throws IOException
+		{
+			csg = node.toCSG( modules );
+		}
+	}
+	
 	public abstract class Node
 	{
 		ArrayList<Node> children = new ArrayList<Node>();
 		
-		public CSG toCSG() throws IOException
+		public CSG toCSG( ArrayList<ModuleContainer> modules ) throws IOException
 		{
 			onNode++;
-			return _impltoCSG();
+			return _impltoCSG( modules );
 		}
 		
-		protected abstract CSG _impltoCSG() throws IOException;
+		public ArrayList<String> getDependencies()
+		{
+			if( children.size() == 0 )
+			{
+				return new ArrayList<String>();
+			}
+			else
+			{
+				ArrayList<String> arr = new ArrayList<String>();
+				children.forEach( c -> arr.addAll( c.getDependencies() ) );
+				return arr;
+			}
+		}
+		
+		protected abstract CSG _impltoCSG( ArrayList<ModuleContainer> modules ) throws IOException;
 	}
 	
 	public class Union extends Node
 	{
-		public CSG _impltoCSG() throws IOException
+		public CSG _impltoCSG( ArrayList<ModuleContainer> modules ) throws IOException
 		{
-			CSG c = children.get( 0 ).toCSG();
+			CSG c = children.get( 0 ).toCSG( modules );
 			for( int i = 1; i < children.size(); i++ )
 			{
-				c = c.union( children.get( i ).toCSG() );
+				c = c.union( children.get( i ).toCSG( modules ) );
 			}
 			return c;
 		}
@@ -181,10 +272,10 @@ public class TreeCompiler
 			children.add( c2 );
 		}
 
-		protected CSG _impltoCSG() throws IOException
+		protected CSG _impltoCSG( ArrayList<ModuleContainer> modules ) throws IOException
 		{
-			CSG c1 = children.get( 0 ).toCSG();
-			CSG c2 = children.get( 1 ).toCSG();
+			CSG c1 = children.get( 0 ).toCSG( modules );
+			CSG c2 = children.get( 1 ).toCSG( modules );
 			CSG ret;
 			try {
 				ret = c1.difference( c2 );
@@ -199,12 +290,12 @@ public class TreeCompiler
 	
 	public class Intersection extends Node
 	{
-		protected CSG _impltoCSG() throws IOException
+		protected CSG _impltoCSG( ArrayList<ModuleContainer> modules ) throws IOException
 		{
-			CSG c = children.get( 0 ).toCSG();
+			CSG c = children.get( 0 ).toCSG( modules );
 			for( int i = 1; i < children.size(); i++ )
 			{
-				c = c.intersect( children.get( i ).toCSG() );
+				c = c.intersect( children.get( i ).toCSG( modules ) );
 			}
 			return c;
 		}
@@ -226,10 +317,10 @@ public class TreeCompiler
 			this.z = z;
 		}
 
-		protected CSG _impltoCSG() throws IOException
+		protected CSG _impltoCSG( ArrayList<ModuleContainer> modules ) throws IOException
 		{
 			Transform t = Transform.unity().translate( x, y, z );
-			return children.get( 0 ).toCSG().transformed( t );
+			return children.get( 0 ).toCSG( modules ).transformed( t );
 		}
 	}
 	
@@ -244,7 +335,7 @@ public class TreeCompiler
 			this.z = z;
 		}
 
-		protected CSG _impltoCSG()
+		protected CSG _impltoCSG( ArrayList<ModuleContainer> modules )
 		{
 			return new eu.mihosoft.vrl.v3d.Cube( x, y, z ).toCSG();
 		}
@@ -262,7 +353,7 @@ public class TreeCompiler
 			this.stacks = stacks;
 		}
 
-		protected CSG _impltoCSG()
+		protected CSG _impltoCSG( ArrayList<ModuleContainer> modules )
 		{
 			return new eu.mihosoft.vrl.v3d.Sphere( r, slices, stacks ).toCSG();
 		}
@@ -280,7 +371,7 @@ public class TreeCompiler
 			this.slices = slices;
 		}
 
-		protected CSG _impltoCSG()
+		protected CSG _impltoCSG( ArrayList<ModuleContainer> modules )
 		{
 			return new eu.mihosoft.vrl.v3d.Cylinder( r, height, slices ).toCSG();
 		}
@@ -295,7 +386,7 @@ public class TreeCompiler
 			this.filename = filename;
 		}
 
-		protected CSG _impltoCSG() throws IOException
+		protected CSG _impltoCSG( ArrayList<ModuleContainer> modules ) throws IOException
 		{
 			return eu.mihosoft.vrl.v3d.STL.file( java.nio.file.Paths.get( filename ) );
 		}
@@ -313,7 +404,7 @@ public class TreeCompiler
 			this.faces = faces;
 		}
 
-		protected CSG _impltoCSG() throws IOException
+		protected CSG _impltoCSG( ArrayList<ModuleContainer> modules ) throws IOException
 		{
 			return new eu.mihosoft.vrl.v3d.Polyhedron( points, faces ).toCSG();
 		}
@@ -329,9 +420,27 @@ public class TreeCompiler
 			this.b = b;
 		}
 		
-		protected CSG _impltoCSG() throws IOException
+		protected CSG _impltoCSG( ArrayList<ModuleContainer> modules ) throws IOException
 		{
-			return children.get( 0 ).toCSG().color( javafx.scene.paint.Color.color( r, g, b ) );
+			return children.get( 0 ).toCSG( modules ).color( javafx.scene.paint.Color.color( r, g, b ) );
+		}
+	}
+	
+	public class Module extends Node
+	{
+		String name;
+
+		protected CSG _impltoCSG( ArrayList<ModuleContainer> modules ) throws IOException
+		{
+			for( int i = 0; i < modules.size(); i++ )
+			{
+				ModuleContainer m = modules.get( i );
+				if( name.equals( m.name ) )
+				{
+					return m.csg;
+				}
+			}
+			return null;
 		}
 	}
 }
