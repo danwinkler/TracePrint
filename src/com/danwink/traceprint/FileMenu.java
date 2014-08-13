@@ -8,6 +8,7 @@ import java.nio.file.WatchService;
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JSeparator;
 import javax.swing.KeyStroke;
 
 public class FileMenu extends JMenu implements ActionListener
@@ -41,8 +42,14 @@ public class FileMenu extends JMenu implements ActionListener
 		JMenuItem saveAsMenu = new JMenuItem( "Save As...", 'A' );
 		saveAsMenu.setActionCommand( "saveas" );
 		saveAsMenu.addActionListener( this );
-		saveAsMenu.addActionListener( this );
 		this.add( saveAsMenu );
+		
+		this.add( new JSeparator( JSeparator.HORIZONTAL ) );
+		
+		JMenuItem exportStlMenu = new JMenuItem( "Export as STL...", 'E' );
+		exportStlMenu.setActionCommand( "exportstl" );
+		exportStlMenu.addActionListener( this );
+		this.add( exportStlMenu );
 		
 		this.tp = tp;
 	}
@@ -83,6 +90,16 @@ public class FileMenu extends JMenu implements ActionListener
 			int returnVal = sfc.showSaveDialog( tp.container );
 			if( returnVal == JFileChooser.APPROVE_OPTION ) {
 				saveFile( sfc.getSelectedFile() );
+			}
+			break;
+		}
+		case "exportstl":
+		{
+			JFileChooser sfc = new JFileChooser();
+			sfc.setCurrentDirectory( f != null ? f.getParentFile() : new File( System.getProperty("user.dir") ) );
+			int returnVal = sfc.showSaveDialog( tp.container );
+			if( returnVal == JFileChooser.APPROVE_OPTION ) {
+				tp.exportSTL( sfc.getSelectedFile() );
 			}
 			break;
 		}

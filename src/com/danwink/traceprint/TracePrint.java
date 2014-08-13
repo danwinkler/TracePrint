@@ -156,4 +156,16 @@ public class TracePrint implements FileWatcherListener
 			e.printStackTrace();
 		}
 	}
+
+	public void exportSTL( File f )
+	{
+		try
+		{
+			DFile.saveText( f, g.toStlString() );
+		}
+		catch( FileNotFoundException e )
+		{
+			e.printStackTrace();
+		}
+	}
 }
