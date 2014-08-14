@@ -26,10 +26,11 @@ public class TracePrint implements FileWatcherListener
 	
 	public JMenuBar menubar;
 	public FileMenu filemenu;
+	public RenderMenu rendermenu;
 	
 	public JSplitPane splitPane;
 	
-	public RenderPanel rp;
+	public QuickViewPanel rp;
 	public CodePanel cp;
 	
 	public StatusBar sb;
@@ -60,7 +61,10 @@ public class TracePrint implements FileWatcherListener
 		filemenu = new FileMenu( this );
 		menubar.add( filemenu );
 		
-		rp = new RenderPanel();
+		rendermenu = new RenderMenu( this );
+		menubar.add( rendermenu );
+		
+		rp = new QuickViewPanel();
 		
 		cp = new CodePanel( this );
 		
@@ -71,7 +75,7 @@ public class TracePrint implements FileWatcherListener
 		container.getContentPane().add( sb, BorderLayout.SOUTH );
 		
 		container.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
-		container.setSize( 640, 480 );
+		container.setSize( 800, 600 );
 		container.setVisible( true );
 		
 		container.addWindowListener( new WindowAdapter() {
@@ -167,5 +171,11 @@ public class TracePrint implements FileWatcherListener
 		{
 			e.printStackTrace();
 		}
+	}
+
+	public void renderCurrent()
+	{
+		RenderFrame renderFrame = new RenderFrame( g );
+		renderFrame.setVisible( true );
 	}
 }

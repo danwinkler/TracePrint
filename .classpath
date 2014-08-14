@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="jcsg/build/classes/main" sourcepath="jcsg/src/main"/>
 	<classpathentry kind="lib" path="lib/json-simple-1.1.1.jar"/>
 	<classpathentry kind="lib" path="lib/jogl/jar/gluegen-rt.jar"/>
 	<classpathentry kind="lib" path="lib/jogl/jar/jogl-all.jar"/>
 	<classpathentry kind="lib" path="lib/rsyntaxtextarea.jar"/>
+	<classpathentry kind="lib" path="lib/vecmath.jar"/>
+	<classpathentry kind="lib" path="lib/miglayout-4.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="jcsg/build/tmp/expandedArchives/slf4j-api-1.6.1.jar_2tslaqs2lpm1dm774mbci7b2v0"/>
-	<classpathentry kind="lib" path="jcsg/build/tmp/expandedArchives/slf4j-simple-1.6.1.jar_3b9ug1vcpbj6jnu78sr23m559s"/>
-	<classpathentry kind="lib" path="jcsg/build/tmp/expandedArchives/vecmath-1.3.1.jar_1l9ba8grb95sp8kqshkc8n06v9"/>
 	<classpathentry kind="src" path="/dlib"/>
+	<classpathentry kind="lib" path="lib/jcsg/build/classes/main"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

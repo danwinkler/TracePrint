@@ -23,7 +23,7 @@ import com.phyloa.dlib.util.DMath;
 import eu.mihosoft.vrl.v3d.CSG;
 
 
-public class RenderPanel implements GLEventListener, MouseListener, MouseWheelListener, MouseMotionListener
+public class QuickViewPanel implements GLEventListener, MouseListener, MouseWheelListener, MouseMotionListener
 {
 	public GLJPanel gljpanel;
 	
@@ -38,7 +38,7 @@ public class RenderPanel implements GLEventListener, MouseListener, MouseWheelLi
 	
 	int oldx, oldy;
 	
-	public RenderPanel()
+	public QuickViewPanel()
 	{
 		GLProfile glprofile = GLProfile.getDefault();
 		GLCapabilities glcapabilities = new GLCapabilities( glprofile );
