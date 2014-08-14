@@ -1,3 +1,6 @@
 [submodule "lib\\jcsg"]
 	path = lib\\jcsg
 	url = https://github.com/miho/JCSG.git
+[submodule "lib/jcsg"]
+	path = lib/jcsg
+	url = https://github.com/miho/JCSG.git
