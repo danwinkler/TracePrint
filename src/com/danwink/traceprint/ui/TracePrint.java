@@ -1,18 +1,21 @@
-package com.danwink.traceprint;
+package com.danwink.traceprint.ui;
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.prefs.Preferences;
-
+import java.util.ArrayList;
 import javax.swing.JFrame;
 import javax.swing.JMenuBar;
 import javax.swing.JSplitPane;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import com.danwink.traceprint.csg.CSGHelper;
+import com.danwink.traceprint.csg.JSONCompiler;
+import com.danwink.traceprint.raytrace.Scene;
+import com.phyloa.dlib.math.Geom;
 import com.phyloa.dlib.util.DFile;
 import com.phyloa.dlib.util.DProperties;
 import com.phyloa.dlib.util.FileWatcher;
@@ -37,10 +40,12 @@ public class TracePrint implements FileWatcherListener
 	
 	public DProperties prefs;
 	
-	CSG g;
+	Scene<ArrayList<Geom>> scene;
+	Scene<CSG> sceneCSG;
+	
 	FileWatcher fw;
 	
-	TreeCompiler tc = new TreeCompiler();
+	JSONCompiler tc = new JSONCompiler();
 	
 	public TracePrint()
 	{
@@ -129,19 +134,9 @@ public class TracePrint implements FileWatcherListener
 		
 	}
 	
+	@SuppressWarnings( "unused" )
 	public static void main( String[] args ) throws IOException
-	{
-		/*
-		CSG c = TreeCompiler.parse( DFile.loadText( "python/test.json" ) );
-		c = STL.file(java.nio.file.Paths.get("C:\\Users\\Daniel\\Desktop\\stuff\\3dprinting\\3dprintpython\\dan\\project\\ballsculpture\\ballsculpture2.stl"));
-		RayTracer rt = new RayTracer( c, 600, 400 );
-		RenderFileParser.parse( DFile.loadText( "python/renderfile.txt" ), rt );
-		rt.setup();
-		rt.render();
-		DFile.saveImage( "C:/rt/tp" + System.currentTimeMillis() + ".png", "png", rt.im );
-		//DFile.saveText( "test.stl", rt.toStlString() );
-		*/
-		
+	{	
 		TracePrint tp = new TracePrint();
 	}
 
@@ -151,7 +146,7 @@ public class TracePrint implements FileWatcherListener
 		{
 			sb.fileName.setText( f.getAbsolutePath() );
 			String text = DFile.loadText( f );
-			tc.runParseThread( text, c -> { g = c; rp.renderCSG( g ); } );
+			tc.runParseThread( text, (s) -> { this.sceneCSG = s; this.scene = CSGHelper.convertSceneCSGtoRT( s ); rp.renderCSG( this.scene ); } );
 			sb.startProgressThread( () -> tc.getProgress(), () -> tc.getMax() );
 			cp.updateCode( text );
 		}
@@ -165,7 +160,7 @@ public class TracePrint implements FileWatcherListener
 	{
 		try
 		{
-			DFile.saveText( f, g.toStlString() );
+			DFile.saveText( f, sceneCSG.g.toStlString() );
 		}
 		catch( FileNotFoundException e )
 		{
@@ -175,7 +170,7 @@ public class TracePrint implements FileWatcherListener
 
 	public void renderCurrent()
 	{
-		RenderFrame renderFrame = new RenderFrame( g );
+		RenderFrame renderFrame = new RenderFrame( this, scene );
 		renderFrame.setVisible( true );
 	}
 }

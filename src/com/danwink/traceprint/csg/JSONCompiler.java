@@ -1,20 +1,21 @@
-package com.danwink.traceprint;
+package com.danwink.traceprint.csg;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
+import javax.vecmath.Point3f;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+import com.danwink.traceprint.raytrace.Light;
+import com.danwink.traceprint.raytrace.Scene;
+
 import eu.mihosoft.vrl.v3d.CSG;
 import eu.mihosoft.vrl.v3d.Transform;
 import eu.mihosoft.vrl.v3d.Vector3d;
 
-public class TreeCompiler
+public class JSONCompiler
 {
 	static 
 	{
@@ -25,7 +26,7 @@ public class TreeCompiler
 	int onNode;
 	
 	public interface ParseCallback {
-	    void finished( CSG g );
+	    void finished( Scene<CSG> scene );
 	}
 	
 	public int getProgress()
@@ -47,6 +48,7 @@ public class TreeCompiler
 			{
 				try
 				{
+					ArrayList<Light> lights = getLights( s );
 					ArrayList<ModuleContainer> modules = getModules( s );
 					boolean complete = false;
 					while( !complete )
@@ -72,7 +74,7 @@ public class TreeCompiler
 					{
 						if( mc.name.equals( "main" ) )
 						{
-							cb.finished( mc.csg );
+							cb.finished( new Scene<CSG>( mc.csg, lights ) );
 						}
 					}
 				}
@@ -83,6 +85,42 @@ public class TreeCompiler
 			}
 		});
 		t.start();
+	}
+	
+	public ArrayList<Light> getLights( String s )
+	{
+		JSONObject json = (JSONObject)JSONValue.parse( s );
+		if( json == null ) return new ArrayList<Light>();
+		JSONArray lights = (JSONArray)json.get( "lights" );
+		return lights == null ? new ArrayList<Light>() : getLights( lights );
+	}
+	
+	@SuppressWarnings( "unchecked" )
+	public ArrayList<Light> getLights( JSONArray s )
+	{
+		ArrayList<Light> lights = new ArrayList<Light>();
+		s.forEach( l -> {
+			JSONObject lo = (JSONObject)l;
+			Light light = new Light();
+			light.type = Light.Type.valueOf( ((String)lo.get( "type" )).toUpperCase() );
+			switch( light.type )
+			{
+			case DIRECTIONAL:
+				break;
+			case POINT:
+				light.pos = new Point3f();
+				light.pos.x = (float)(double)lo.get( "x" );
+				light.pos.y = (float)(double)lo.get( "y" );
+				light.pos.z = (float)(double)lo.get( "z" );
+				break;
+			case SPOT:
+				break;
+			default:
+				break;
+			}
+			lights.add( light );
+		});
+		return lights;
 	}
 	
 	public ArrayList<ModuleContainer> getModules( String s )
@@ -151,7 +189,7 @@ public class TreeCompiler
 			return new Sphere( (double)a.get( "r" ), (int)(long)a.get( "slices" ), (int)(long)a.get( "stacks" ) );
 		}
 		case "cylinder": {
-			return new Cylinder( (double)a.get( "r" ), (double)a.get( "height" ), (int)a.get( "slices" ) );
+			return new Cylinder( (double)a.get( "r" ), (double)a.get( "height" ), (int)(long)a.get( "slices" ) );
 		}
 		case "stl": {
 			return new STL( (String)a.get( "path" ) );

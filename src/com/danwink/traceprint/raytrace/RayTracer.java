@@ -1,8 +1,6 @@
-package com.danwink.traceprint;
+package com.danwink.traceprint.raytrace;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 import javax.vecmath.Matrix3f;
 import javax.vecmath.Point3f;
@@ -11,27 +9,17 @@ import javax.vecmath.Vector3f;
 import com.phyloa.dlib.math.Geom;
 import com.phyloa.dlib.math.Intersection;
 import com.phyloa.dlib.math.Rayf;
-import com.phyloa.dlib.math.Trianglef;
-import com.phyloa.dlib.renderer.RayTraceImageRenderer.Light;
 import com.phyloa.dlib.util.DGraphics;
-
-import eu.mihosoft.vrl.v3d.CSG;
-import eu.mihosoft.vrl.v3d.Polygon;
-import eu.mihosoft.vrl.v3d.Vertex;
-import eu.mihosoft.vrl.v3d.ext.org.poly2tri.PolygonUtil;
-
 
 public class RayTracer
 {
-	BufferedImage im;
+	public BufferedImage im;
 	Point3f[][] values;
 	int width;
 	int height;
 	
-	CSG c;
-	ArrayList<Geom> geom = new ArrayList<Geom>();
+	Scene<ArrayList<Geom>> scene;
 	
-	ArrayList<Point3f> lights = new ArrayList<Point3f>();
 	Point3f cameraLoc = new Point3f( 0, 0, 0 );
 	Vector3f cameraLook = new Vector3f();
 	Vector3f cameraUp = new Vector3f();
@@ -41,18 +29,33 @@ public class RayTracer
 	float lift;
 	float breadth;
 	
-	public RayTracer( CSG c, int width, int height )
+	public RayTracer( Scene<ArrayList<Geom>> scene, int width, int height )
 	{
+		this.scene = scene;
 		im = DGraphics.createBufferedImage( width, height );
 		values = new Point3f[width][height];
 		this.width = width;
 		this.height = height;
-		this.c = c;
 		
 		viewAngleX = 50.f;
 		viewAngleY = (viewAngleX / (float)width) * height;
 		lift = (float) Math.tan( Math.toRadians( viewAngleY ) );
 		breadth = (float) Math.tan( Math.toRadians( viewAngleX ) );
+	}
+	
+	
+	public void camera( float[] arr )
+	{
+		camera( arr[0],
+				arr[1],
+				arr[2],
+				arr[3],
+				arr[4],
+				arr[5],
+				arr[6],
+				arr[7],
+				arr[8]
+		);
 	}
 	
 	public void camera( float cx, float cy, float cz, float lx, float ly, float lz, float ux, float uy, float uz )
@@ -84,11 +87,6 @@ public class RayTracer
 		camera.m02 = cameraUp.x;
 		camera.m12 = cameraUp.y;
 		camera.m22 = cameraUp.z;
-	}
-	
-	public void setup()
-	{
-		geom.addAll( CSGParser.parse( c ) );
 	}
 	
 	long lastUpdate;
@@ -128,9 +126,9 @@ public class RayTracer
 		if( intersect != null )
 		{
 			int c = intersect.getGeom().getColor( 0, 0 );
-			for( Point3f light : lights )
+			for( Light light : scene.lights )
 			{
-				Vector3f lv = new Vector3f( light );
+				Vector3f lv = new Vector3f( light.pos );
 				lv.sub( intersect.getLoc() );
 				Rayf lr = new Rayf( intersect.getLoc(), lv );
 				Intersection li = getIntersection( lr );
@@ -152,9 +150,9 @@ public class RayTracer
 	{
 		Intersection point = null;
 		
-		for( int j = 0; j < geom.size(); j++ )
+		for( int j = 0; j < scene.g.size(); j++ )
 		{
-			Intersection temp = geom.get( j ).intersects( ray );
+			Intersection temp = scene.g.get( j ).intersects( ray );
 			if( point != null && temp != null )
 			{
 				if( temp.getDist() < point.getDist() )
@@ -180,6 +178,6 @@ public class RayTracer
 
 	public void light( float x, float y, float z )
 	{
-		lights.add( new Point3f( x, y, z ) );
+		//lights.add( new Point3f( x, y, z ) );
 	}
 }

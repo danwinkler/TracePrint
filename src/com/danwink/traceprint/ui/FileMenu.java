@@ -1,16 +1,14 @@
-package com.danwink.traceprint;
+package com.danwink.traceprint.ui;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.nio.file.FileSystems;
-import java.nio.file.WatchService;
-
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 import javax.swing.KeyStroke;
 
+@SuppressWarnings( "serial" )
 public class FileMenu extends JMenu implements ActionListener
 {	
 	TracePrint tp;

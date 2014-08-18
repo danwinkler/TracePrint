@@ -1,4 +1,4 @@
-package com.danwink.traceprint;
+package com.danwink.traceprint.ui;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -9,6 +9,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
+@SuppressWarnings( "serial" )
 public class CodePanel extends JPanel implements ActionListener
 {
 	TracePrint tp;

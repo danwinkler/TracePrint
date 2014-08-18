@@ -1,4 +1,4 @@
-package com.danwink.traceprint;
+package com.danwink.traceprint.ui;
 
 import java.awt.Dimension;
 import java.lang.reflect.InvocationTargetException;
@@ -10,6 +10,7 @@ import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 import javax.swing.border.BevelBorder;
 
+@SuppressWarnings( "serial" )
 public class StatusBar extends JPanel
 {
 	JLabel fileName;

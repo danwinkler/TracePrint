@@ -1,4 +1,4 @@
-package com.danwink.traceprint;
+package com.danwink.traceprint.ui;
 
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -15,12 +15,12 @@ import javax.media.opengl.GLEventListener;
 import javax.media.opengl.GLProfile;
 import javax.media.opengl.awt.GLJPanel;
 import javax.media.opengl.glu.GLU;
-import javax.vecmath.Vector3f;
-
+import com.danwink.traceprint.raytrace.Light;
+import com.danwink.traceprint.raytrace.Scene;
+import com.phyloa.dlib.math.Geom;
 import com.phyloa.dlib.math.Trianglef;
+import com.phyloa.dlib.util.DGraphics;
 import com.phyloa.dlib.util.DMath;
-
-import eu.mihosoft.vrl.v3d.CSG;
 
 
 public class QuickViewPanel implements GLEventListener, MouseListener, MouseWheelListener, MouseMotionListener
@@ -34,10 +34,11 @@ public class QuickViewPanel implements GLEventListener, MouseListener, MouseWhee
 	public float dist = 100;
 	public float[] lookat = { 0, -100, 100, 0, 0, 0, 0, 0, 1 };
 	
-	ArrayList<Trianglef> geom;
+	Scene<ArrayList<Geom>> scene;
+	ArrayList<Trianglef> geom = new ArrayList<Trianglef>();
 	
 	int oldx, oldy;
-	
+
 	public QuickViewPanel()
 	{
 		GLProfile glprofile = GLProfile.getDefault();
@@ -54,7 +55,7 @@ public class QuickViewPanel implements GLEventListener, MouseListener, MouseWhee
 	
 	public void reshape( GLAutoDrawable glautodrawable, int x, int y, int width, int height )
     {  
-		GL2 gl2 = glautodrawable.getGL().getGL2();
+		//GL2 gl2 = glautodrawable.getGL().getGL2();
     }
 
     public void init( GLAutoDrawable glautodrawable )
@@ -88,12 +89,16 @@ public class QuickViewPanel implements GLEventListener, MouseListener, MouseWhee
         
         gl2.glEnable( GL2.GL_DEPTH_TEST );
     	gl2.glClear( GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT );
+    	
+    	gl2.glPointSize( 3 );
 
-        if( geom != null )
+        if( scene != null )
         {
-        	gl2.glColor3f( 1, 1, 1 );
+        	
 	    	gl2.glBegin( GL.GL_TRIANGLES );
 	        for( Trianglef t : geom ) {
+	        	int c = t.color;
+	        	gl2.glColor3f( DGraphics.getRed( c )/255.f, DGraphics.getGreen( c )/255.f, DGraphics.getBlue( c )/255.f );
 	        	gl2.glVertex3f( t.p1.x, t.p1.y, t.p1.z );
 	        	gl2.glVertex3f( t.p2.x, t.p2.y, t.p2.z );
 	        	gl2.glVertex3f( t.p3.x, t.p3.y, t.p3.z );
@@ -108,19 +113,32 @@ public class QuickViewPanel implements GLEventListener, MouseListener, MouseWhee
 	        	gl2.glVertex3f( t.p3.x, t.p3.y, t.p3.z );
 	        	gl2.glEnd();
 	        }
+	        
+	        gl2.glColor3f( 1, 0, 0 );
+	        gl2.glBegin( GL.GL_POINTS );
+	        for( Light l : scene.lights )
+	        {
+	        	gl2.glVertex3f( l.pos.x, l.pos.y, l.pos.z );
+	        }
+	        gl2.glEnd();
         }
     }
 
-	public void renderCSG( CSG g )
+	public void renderCSG( Scene<ArrayList<Geom>> scene )
 	{
-		geom = CSGParser.parse( g );
+		this.scene = scene;
+		geom.clear();
+		for( Geom g : scene.g )
+		{
+			geom.add( (Trianglef)g );
+		}
 		gljpanel.repaint();
 	}
 	
 	public void computeLookat()
 	{
-		lookat[0] = DMath.cosf( xa ) * dist;
-		lookat[1] = DMath.sinf( xa ) * dist;
+		lookat[0] = DMath.cosf( xa ) * DMath.cosf( za ) * dist;
+		lookat[1] = DMath.sinf( xa ) * DMath.cosf( za ) * dist;
 		lookat[2] = DMath.sinf( za ) * dist;
 	}
 

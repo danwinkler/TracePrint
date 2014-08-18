@@ -1,10 +1,11 @@
-package com.danwink.traceprint;
+package com.danwink.traceprint.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -12,19 +13,24 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import com.danwink.traceprint.raytrace.RayTracer;
+import com.danwink.traceprint.raytrace.Scene;
+import com.phyloa.dlib.math.Geom;
+
 import net.miginfocom.swing.MigLayout;
-import eu.mihosoft.vrl.v3d.CSG;
 
 @SuppressWarnings( "serial" )
 public class RenderFrame extends JFrame
 {
+	TracePrint tp;
+	
 	ImagePanel ip;
 	ControlPanel cp;
 	
 	RayTracer rt;
-	public CSG g;
+	public Scene<ArrayList<Geom>> scene;
 	
-	public RenderFrame( CSG g )
+	public RenderFrame( TracePrint tp, Scene<ArrayList<Geom>> scene )
 	{
 		super();
 		this.setSize( 800, 600 );
@@ -35,7 +41,8 @@ public class RenderFrame extends JFrame
 		this.add( ip, BorderLayout.CENTER );
 		this.add( cp, BorderLayout.SOUTH );
 		
-		this.g = g;
+		this.scene = scene;
+		this.tp = tp;
 	}
 	
 	
@@ -86,11 +93,12 @@ public class RenderFrame extends JFrame
 			{
 			case "start":
 			{
-				rt = new RayTracer( g, Integer.parseInt( width.getText() ), Integer.parseInt( height.getText() ) );
+				rt = new RayTracer( scene, Integer.parseInt( width.getText() ), Integer.parseInt( height.getText() ) );
+				rt.camera( tp.rp.lookat );
 				ip.im = rt.im;
-				rt.setup();
 				new Thread( () -> {
 					rt.render();
+					ip.repaint();
 				}).start();
 			}
 			}

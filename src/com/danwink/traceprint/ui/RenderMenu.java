@@ -1,4 +1,4 @@
-package com.danwink.traceprint;
+package com.danwink.traceprint.ui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
